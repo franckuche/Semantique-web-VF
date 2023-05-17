@@ -66,7 +66,6 @@ def scrape_article(url):
         return [], 0, "", "", ""
 
 def scrape_google(query):
-def scrape_google(query):
     api_key = '8e87e954-6b75-4888-bd6c-86868540beeb'
     url = f'https://api.spaceserp.com/google/search?apiKey={api_key}&q={query}&domain=google.fr&gl=fr&hl=fr&resultFormat=json&resultBlocks=organic_results%2Canswer_box%2Cpeople_also_ask%2Crelated_searches%2Cads_results'
     response = requests.get(url).json()
