@@ -65,51 +65,51 @@ def scrape_article(url):
         print(f"Error scraping article: {e}")
         return [], 0, "", "", ""
 
-def scrape_google(query):
-    api_key = '8e87e954-6b75-4888-bd6c-86868540beeb'
-    url = f'https://api.spaceserp.com/google/search?apiKey={api_key}&q={query}&domain=google.fr&gl=fr&hl=fr&resultFormat=json&resultBlocks=organic_results%2Canswer_box%2Cpeople_also_ask%2Crelated_searches%2Cads_results'
-    response = requests.get(url).json()
-    results = []
-    all_titles = []
-    all_headings = []
-    word_counts = []
-    semantic_fields = []
-    named_entities = []
-    serp_descriptions = []
-    meta_descriptions = []
-    if 'organic_results' in response:
-        for result in response['organic_results']:
-            title = result['title']
-            url = result['link']
-            serp_description = result['description']
-            headings, word_count, meta_description, semantic_field, named_entity = scrape_article(url)
-            all_titles.append(title)
-            all_headings.append(' '.join(headings))
-            word_counts.append(word_count)
-            semantic_fields.append(semantic_field)
-            named_entities.append(named_entity)
-            serp_descriptions.append(serp_description)
-            meta_descriptions.append(meta_description)
-            results.append((title, url, ' '.join(headings), word_count, '', serp_description, meta_description, semantic_field, named_entity))
-    if 'people_also_ask' in response:
-        people_also_ask = [item['question'] for item in response['people_also_ask']]
-        all_questions = ' '.join(people_also_ask)
-    else:
-        all_questions = ''
-    if not results:
-        return pd.DataFrame(columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
-    df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
-    df = df.rename(index={df.index[-1]: 'Résumé'})
-    df['Semantic Field'] = df['Semantic Field'].str.replace(' ', '  ')  # Ajout d'espaces entre deux expressions
-    df.at['Résumé', 'Title'] = ' '.join(all_titles[:10])  # Forcer le résumé à la 11e ligne
-    df.at['Résumé', 'URL'] = ''
-    df.at['Résumé', 'Headings'] = ' '.join(all_headings[:10])
-    df.at['Résumé', 'Word Count'] = pd.Series(word_counts).median()
-    df.at['Résumé', 'People Also Ask'] = all_questions
-    df.at['Résumé', 'SERP Description'] = ' '.join(serp_descriptions[:10])
-    df.at['Résumé', 'Site Meta Description'] = ' '.join(meta_descriptions[:10])
-    df.at['Résumé', 'Semantic Field'] = ' '.join(semantic_fields[:10])
-    df.at['Résumé', 'Named Entities'] = ' '.join(named_entities[:10])
+    def scrape_google(query):
+        api_key = '8e87e954-6b75-4888-bd6c-86868540beeb'
+        url = f'https://api.spaceserp.com/google/search?apiKey={api_key}&q={query}&domain=google.fr&gl=fr&hl=fr&resultFormat=json&resultBlocks=organic_results%2Canswer_box%2Cpeople_also_ask%2Crelated_searches%2Cads_results'
+        response = requests.get(url).json()
+        results = []
+        all_titles = []
+        all_headings = []
+        word_counts = []
+        semantic_fields = []
+        named_entities = []
+        serp_descriptions = []
+        meta_descriptions = []
+        if 'organic_results' in response:
+            for result in response['organic_results']:
+                title = result['title']
+                url = result['link']
+                serp_description = result['description']
+                headings, word_count, meta_description, semantic_field, named_entity = scrape_article(url)
+                all_titles.append(title)
+                all_headings.append(' '.join(headings))
+                word_counts.append(word_count)
+                semantic_fields.append(semantic_field)
+                named_entities.append(named_entity)
+                serp_descriptions.append(serp_description)
+                meta_descriptions.append(meta_description)
+                results.append((title, url, ' '.join(headings), word_count, '', serp_description, meta_description, semantic_field, named_entity))
+        if 'people_also_ask' in response:
+            people_also_ask = [item['question'] for item in response['people_also_ask']]
+            all_questions = ' '.join(people_also_ask)
+        else:
+            all_questions = ''
+        if not results:
+            return pd.DataFrame(columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
+        df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
+        df = df.rename(index={df.index[-1]: 'Résumé'})
+        df['Semantic Field'] = df['Semantic Field'].str.replace(' ', '  ')  # Ajout d'espaces entre deux expressions
+        df.at['Résumé', 'Title'] = ' '.join(all_titles[:10])  # Forcer le résumé à la 11e ligne
+        df.at['Résumé', 'URL'] = ''
+        df.at['Résumé', 'Headings'] = ' '.join(all_headings[:10])
+        df.at['Résumé', 'Word Count'] = pd.Series(word_counts).median()
+        df.at['Résumé', 'People Also Ask'] = all_questions
+        df.at['Résumé', 'SERP Description'] = ' '.join(serp_descriptions[:10])
+        df.at['Résumé', 'Site Meta Description'] = ' '.join(meta_descriptions[:10])
+        df.at['Résumé', 'Semantic Field'] = ' '.join(semantic_fields[:10])
+        df.at['Résumé', 'Named Entities'] = ' '.join(named_entities[:10])
 
     return df
 
