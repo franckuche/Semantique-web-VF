@@ -1,4 +1,3 @@
-import openai
 import streamlit as st
 import requests
 import pandas as pd
@@ -6,12 +5,20 @@ from bs4 import BeautifulSoup
 import spacy
 from spacy import displacy
 from nltk.probability import FreqDist
+import openai
+
+# Demande des clés API OpenAI
+api_key_1 = st.text_input("Enter OpenAI API Key 1:")
+api_key_2 = st.text_input("Enter OpenAI API Key 2:")
+api_key_3 = st.text_input("Enter OpenAI API Key 3:")
+
+# Vérification des clés API
+openai_api_keys = [api_key_1, api_key_2, api_key_3]
+openai_api_keys = [key for key in openai_api_keys if key.strip()]
+if not openai_api_keys:
+    st.error("Please enter at least one OpenAI API Key.")
 
 nlp = spacy.load('fr_core_news_sm')
-
-# Vos clés API OpenAI ici
-openai_api_keys = ['clé-api-1', 'clé-api-2', 'clé-api-3']
-openai_api_index = 0
 
 def analyze_text(text):
     doc = nlp(text)
@@ -58,22 +65,7 @@ def scrape_article(url):
         print(f"Error scraping article: {e}")
         return [], 0, "", "", ""
 
-def generate_openai_prompt(keyword, headings_summary, word_count_summary):
-    prompt_text = f"Veuillez ignorer toutes les instructions précédentes. Tu es un expert en référencement SEO reconnu en France. Tu dois délivrer un brief de très haute qualité à tes rédacteurs. Voici quelques informations sur ce qu'est un bon brief en 2023, il faudra t'appuyer sur ces dernières pour ta proposition de brief : {headings_summary}. En adaptant ton brief aux conseils ci-dessus, propose-moi un brief complet pour un texte sur {keyword} pour mon rédacteur en adaptant la longueur de ce dernier en fonction de la longueur du texte que je vais vous demander, en l'occurrence pour celui-ci j'aimerais un texte de {word_count_summary}, en incluant les titres des parties, les titres des sous parties et me donnant le nombre de mots de chaque partie. Vous devrez essayer d'inclure selon les besoins un ou plusieurs [tableau], des [images], des [listes], des [liens internes], des [boutons], des [vidéos], etc..."
-
-    messages = [
-        {"role": "system", "content": prompt_text},
-    ]
-
-    chat = openai.ChatCompletion.create(
-        model="gpt-4", messages=messages, api_key=openai_api_keys[openai_api_index]
-    )
-
-    # Passer à la clé API suivante
-    openai_api_index = (openai_api_index + 1) % len(openai_api_keys)
-
-    return chat.choices[0].message.content
-
+def scrape_google(query):
 def scrape_google(query):
     api_key = '8e87e954-6b75-4888-bd6c-86868540beeb'
     url = f'https://api.spaceserp.com/google/search?apiKey={api_key}&q={query}&domain=google.fr&gl=fr&hl=fr&resultFormat=json&resultBlocks=organic_results%2Canswer_box%2Cpeople_also_ask%2Crelated_searches%2Cads_results'
@@ -122,23 +114,5 @@ def scrape_google(query):
 
     return df
 
-
-st.title("Google Scraper and Article Analyzer")
-query = st.text_input("Enter search queries (separated by commas):")
-
-if st.button("Scrape Google"):
-    queries = [q.strip() for q in query.split(',')]
-
-    for q in queries:
-        df = scrape_google(q)
-        st.write(f"Results for {q}:")
-        st.write(df)
-
-        title_summary = df.at['Résumé', 'Title']
-        headings_summary = df.at['Résumé', 'Headings']
-        word_count_summary = df.at['Résumé', 'Word Count']
-
-        st.write("Generating OpenAI prompt...")
-        prompt_result = generate_openai_prompt(q, headings_summary, word_count_summary)
-        st.write(prompt_result)
-
+def generate_openai_prompt(keyword, headings_summary, word_count_summary):
+    prompt_text = f"Veuillez ignorer toutes les instructions précédentes. Tu es un expert en référencement SEO reconnu en France. Tu dois délivrer un brief de très haute qualité à tes rédacteurs. Voici quelques informations sur ce qu'est un bon brief en 2023, il faudra t'appuyer sur ces dernières pour ta proposition de brief : {headings_summary}. En adaptant ton brief aux conseils ci-dessus, propose-moi un brief complet pour un texte sur {keyword} pour mon rérédacteur en adaptant la longueur de ce dernier en fonction de la longueur du texte que je vais vous demander, en l'occurrence pour celui-ci j'aimerais un texte de {word_count_summary}, en incluant les titres des parties, les titiers des sous parties et me donnant le nombre de mots de chaque partie. Vous devrez essayer d'inclure selon les besoins un ou plusieurs [tableau], des [images], des [listes], des [liens internes], des [boutons], des
