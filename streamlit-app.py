@@ -63,7 +63,7 @@ def generate_summary_row(results):
     titles = ' '.join([result[0] for result in results])
     headings = ' '.join([result[2] for result in results])
     word_count_median = pd.Series([result[3] for result in results]).median()
-    people_also_ask = results[0][4]
+    people_also_ask = results[0][4] if results and len(results[0]) >= 5 else ''
     serp_descriptions = ' '.join([result[5] for result in results])
     meta_descriptions = ' '.join([result[6] for result in results])
     semantic_fields = ' '.join([result[7] for result in results])
