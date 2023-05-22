@@ -43,23 +43,23 @@ def scrape_google(query):
         'Semantic Field': '',
         'Named Entities': '',
     }
+    # Reste du code de la fonction...
 
-    google_df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
+    # Vérifier que results n'est pas vide
+    if results:
+        google_df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
 
-    # Créer un nouvel enregistrement avec les valeurs de résumé et l'ajouter au dataframe
-    summary_data = generate_summary_row(results)
-    new_row = pd.Series(summary_data, name='Résumé')
-    google_df = google_df.append(new_row)
+        # Créer un nouvel enregistrement avec les valeurs de résumé et l'ajouter au dataframe
+        new_row = pd.Series(generate_summary_row(results), name='Résumé')
+        google_df = google_df.append(new_row)
 
-    openai_df = pd.DataFrame(columns=['Keyword', 'Volume', 'Titre', 'People Also Ask', 'Semantic Field', 'Named Entities'])
-    openai_df['Keyword'] = google_df['Title']
-    openai_df['Volume'] = ''
-    openai_df['Titre'] = google_df['Title']
-    openai_df['People Also Ask'] = google_df['People Also Ask']
-    openai_df['Semantic Field'] = google_df['Semantic Field']
-    openai_df['Named Entities'] = google_df['Named Entities']
+    else:
+        # Initialiser un DataFrame vide avec les colonnes nécessaires si results est vide
+        google_df = pd.DataFrame(columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
 
-    return google_df, openai_df
+    return google_df
+
+
 
 
 def generate_summary_row(results):
@@ -90,7 +90,7 @@ query = st.text_input("Enter search queries (separated by commas):")
 if st.button("Scrape Google"):
     queries = [q.strip() for q in query.split(',')]
     for q in queries:
-        google_df, openai_df = scrape_google(q)
+        google_df = scrape_google(q)
         st.write(f"Results for {q}:")
         st.write(google_df)
         csv = google_df.to_csv(index=False)
