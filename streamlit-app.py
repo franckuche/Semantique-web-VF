@@ -7,13 +7,21 @@ from nltk.probability import FreqDist
 import openai
 
 # Configuration de l'API OpenAI
-openai.api_key = "YOUR_OPENAI_API_KEY"
+openai.api_key = ""
 
 # Demande des clés API OpenAI dans la sidebar
 st.sidebar.title("OpenAI API Keys")
 api_key_1 = st.sidebar.text_input("Enter OpenAI API Key 1:")
 api_key_2 = st.sidebar.text_input("Enter OpenAI API Key 2:")
 api_key_3 = st.sidebar.text_input("Enter OpenAI API Key 3:")
+
+# Vérification des clés API OpenAI
+openai_api_keys = [api_key_1, api_key_2, api_key_3]
+openai_api_keys = [key for key in openai_api_keys if key.strip()]
+if not openai_api_keys:
+    st.error("Please enter at least one OpenAI API Key.")
+else:
+    openai.api_key = openai_api_keys[0]
 
 nlp = spacy.load('fr_core_news_sm')
 
