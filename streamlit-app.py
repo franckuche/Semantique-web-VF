@@ -150,4 +150,35 @@ if st.button("Scrape Google"):
         st.write(df)
 
 def generate_openai_prompt(keyword, headings_summary, word_count_summary):
-    prompt_text = f"Veuillez ignorer toutes les instructions précédentes. Tu es un expert en référencement SEO reconnu en France. Tu dois délivrer un brief de très haute qualité à tes rédacteurs. Voici quelques informations sur ce qu'est un bon brief en 2023, il faudra t'appuyer sur ces dernières pour ta proposition de brief : {headings_summary}. En adaptant ton brief aux conseils ci-dessus, propose-moi un brief complet pour un texte sur {keyword} pour mon rédacteur en adaptant la longueur de ce dernier en fonction de la longueur du texte que je vais vous demander, en l'occurrence pour celui-ci j'aimerais un texte de {word_count_summary}, en incluant les titres des parties, les titres des sous-parties et me donnant le nombre de mots de chaque partie. Vous devrez essayer d'inclure selon les besoins un ou plusieurs [tableau], des [images], des [listes], des [liens internes], des [boutons], des [vidéos], etc..."
+    messages = [
+        {"role": "system", "content": "You are a proficient SEO expert in France. Generate a detailed brief for a text about the provided keyword."},
+        {"role": "user", "content": f"Here are some good briefing tips for 2023: {headings_summary}. Based on these, can you propose a complete brief for a text about {keyword}, which should be about {word_count_summary} words long, including section titles, subsection titles, and word count for each section? Try to incorporate tables, images, lists, internal links, buttons, videos, etc. as needed."}
+    ]
+    response = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+    return response.choices[0].message.content
+
+def generate_meta_description_prompt(keyword, headings_summary, word_count_summary):
+    messages = [
+        {"role": "system", "content": "You are a proficient SEO expert in France. Create a meta description for a text about the provided keyword."},
+        {"role": "user", "content": f"Here are some good briefing tips for 2023: {headings_summary}. Based on these, can you propose a meta description for a text about {keyword}, which should be about {word_count_summary} words long?"}
+    ]
+    response = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+    return response.choices[0].message.content
+
+st.title("Google Scraper and Article Analyzer")
+query = st.text_input("Enter search queries (separated by commas):")
+
+if st.button("Scrape Google"):
+    queries = [q.strip() for q in query.split(',')]
+    for q in queries:
+        df, title_summary, headings_summary, word_count_summary, people_also_ask_summary, serp_description_summary, meta_description_summary, semantic_field_summary, named_entities_summary = scrape_google(q)
+        df['Plan'] = df.apply(lambda row: generate_openai_prompt(q, headings_summary, word_count_summary), axis=1)
+        df['Proposition Meta Description'] = df.apply(lambda row: generate_meta_description_prompt(q, headings_summary, word_count_summary), axis=1)
+        st.write(f"Results for {q}:")
+        st.write(df)
+
+
+
+
+
+
