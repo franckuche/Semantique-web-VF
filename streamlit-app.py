@@ -6,6 +6,19 @@ import spacy
 from nltk.probability import FreqDist
 import openai
 
+# Configuration de l'API OpenAI
+openai.api_key = ""
+
+# Demande des clés API OpenAI dans la sidebar
+st.sidebar.title("OpenAI API Key")
+openai_api_key = st.sidebar.text_input("Enter OpenAI API Key:")
+
+# Vérification de la clé API OpenAI
+if not openai_api_key.strip():
+    st.error("Please enter an OpenAI API Key.")
+else:
+    openai.api_key = openai_api_key
+
 nlp = spacy.load('fr_core_news_sm')
 
 def analyze_text(text):
