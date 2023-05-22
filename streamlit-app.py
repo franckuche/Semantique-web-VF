@@ -12,9 +12,9 @@ openai.api_key = ""
 
 # Demande des clés API OpenAI dans la sidebar
 st.sidebar.title("OpenAI API Keys")
-api_key_1 = st.text_input("Clé API 1")
-api_key_2 = st.text_input("Clé API 2")
-api_key_3 = st.text_input("Clé API 3")
+api_key_1 = st.sidebar.text_input("Enter OpenAI API Key 1:")
+api_key_2 = st.sidebar.text_input("Enter OpenAI API Key 2:")
+api_key_3 = st.sidebar.text_input("Enter OpenAI API Key 3:")
 
 
 # Vérification des clés API OpenAI
