@@ -62,6 +62,7 @@ def scrape_google(query):
 
 
 
+
 def generate_summary_row(results):
     titles = ' '.join([result[0] for result in results])
     headings = ' '.join([result[2] for result in results])
