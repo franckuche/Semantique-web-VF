@@ -125,7 +125,7 @@ def scrape_google(query):
     else:
         google_df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities', 'OpenAI Plan Proposal', 'OpenAI Meta Description Proposal', 'OpenAI Title Proposal'])
 
-    google_df.at['Résumé'] = generate_summary_row(results)
+    google_df.loc['Résumé'] = generate_summary_row(results)
 
     openai_df = pd.DataFrame(columns=['Keyword', 'Volume', 'Titre', 'Plan', 'Meta Description', 'Balise Titre', 'People Also Ask', 'Semantic Field', 'Named Entities'])
     openai_df['Keyword'] = google_df['Title']
