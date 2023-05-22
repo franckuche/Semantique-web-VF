@@ -43,11 +43,13 @@ def scrape_google(query):
         'Semantic Field': '',
         'Named Entities': '',
     }
-
     # Le reste du code de la fonction reste inchangé jusqu'à la création des dataframes...
 
     google_df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
-    google_df.loc['Résumé'] = list(generate_summary_row(results).values())
+
+    # Créer un nouvel enregistrement avec les valeurs de résumé et l'ajouter au dataframe
+    new_row = pd.Series(generate_summary_row(results), name='Résumé')
+    google_df = google_df.append(new_row)
 
     openai_df = pd.DataFrame(columns=['Keyword', 'Volume', 'Titre', 'People Also Ask', 'Semantic Field', 'Named Entities'])
     openai_df['Keyword'] = google_df['Title']
@@ -78,10 +80,7 @@ def generate_summary_row(results):
         'SERP Description': serp_descriptions,
         'Site Meta Description': meta_descriptions,
         'Semantic Field': semantic_fields,
-        'Named Entities': named_entities,
-        'OpenAI Plan Proposal': '',
-        'OpenAI Meta Description Proposal': '',
-        'OpenAI Title Proposal': ''
+        'Named Entities': named_entities
     }
 
 st.title("Google Scraper and Article Analyzer")
