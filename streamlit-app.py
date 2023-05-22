@@ -43,12 +43,12 @@ def scrape_google(query):
         'Semantic Field': '',
         'Named Entities': '',
     }
-    # Le reste du code de la fonction reste inchangé jusqu'à la création des dataframes...
 
     google_df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
 
     # Créer un nouvel enregistrement avec les valeurs de résumé et l'ajouter au dataframe
-    new_row = pd.Series(generate_summary_row(results), name='Résumé')
+    summary_data = generate_summary_row(results)
+    new_row = pd.Series(summary_data, name='Résumé')
     google_df = google_df.append(new_row)
 
     openai_df = pd.DataFrame(columns=['Keyword', 'Volume', 'Titre', 'People Also Ask', 'Semantic Field', 'Named Entities'])
@@ -60,6 +60,7 @@ def scrape_google(query):
     openai_df['Named Entities'] = google_df['Named Entities']
 
     return google_df, openai_df
+
 
 def generate_summary_row(results):
     titles = ' '.join([result[0] for result in results])
