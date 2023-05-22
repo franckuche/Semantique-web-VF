@@ -166,9 +166,6 @@ def generate_meta_description_prompt(keyword, headings_summary, word_count_summa
     response = openai.ChatCompletion.create(model="gpt-4", messages=messages)
     return response.choices[0].message.content
 
-st.title("Google Scraper and Article Analyzer")
-query = st.text_input("Enter search queries (separated by commas):", key="input2")
-
 if st.button("Scrape Google", key='button2'):
     queries = [q.strip() for q in query.split(',')]
     for q in queries:
