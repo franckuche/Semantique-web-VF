@@ -97,12 +97,14 @@ def scrape_google(query):
 
     for i, row in openai_df.iterrows():
         keyword = row['Keyword']
-        prompt_text = f"Keyword: {keyword}"
+        plan_prompt_text = f"Tu es expert en référencement. Donne-moi un plan sur la forme hn pour le sujet '{keyword}'."
+        titre_prompt_text = f"Tu es expert en référencement. Propose-moi un titre sur la forme hn pour le sujet '{keyword}'."
+        meta_prompt_text = f"Tu es expert en référencement. Propose-moi une meta description sur la forme hn pour le sujet '{keyword}'."
 
         # Call API OpenAI pour obtenir les propositions
-        plan_proposé = generate_openai_proposals(keyword, prompt_text)
-        titre_proposé = generate_openai_proposals(keyword, prompt_text)
-        meta_proposé = generate_openai_proposals(keyword, prompt_text)
+        plan_proposé = generate_openai_proposals(keyword, plan_prompt_text)
+        titre_proposé = generate_openai_proposals(keyword, titre_prompt_text)
+        meta_proposé = generate_openai_proposals(keyword, meta_prompt_text)
 
         openai_df.at[i, 'Plan Proposé'] = plan_proposé
         openai_df.at[i, 'Titre Proposé'] = titre_proposé
