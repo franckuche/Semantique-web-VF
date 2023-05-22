@@ -133,7 +133,7 @@ def scrape_article(url):
 st.title("Google Scraper and Article Analyzer")
 query = st.text_input("Enter search queries (separated by commas):", key="input1")
 
-if st.button("Scrape Google", key='input1'):
+if st.button("Scrape Google", key='button1'):
     # Initialisation des variables de résumé
     title_summary = ""
     headings_summary = ""
@@ -169,7 +169,7 @@ def generate_meta_description_prompt(keyword, headings_summary, word_count_summa
 st.title("Google Scraper and Article Analyzer")
 query = st.text_input("Enter search queries (separated by commas):", key="input2")
 
-if st.button("Scrape Google", key='input2'):
+if st.button("Scrape Google", key='button2'):
     queries = [q.strip() for q in query.split(',')]
     for q in queries:
         df, title_summary, headings_summary, word_count_summary, people_also_ask_summary, serp_description_summary, meta_description_summary, semantic_field_summary, named_entities_summary = scrape_google(q)
