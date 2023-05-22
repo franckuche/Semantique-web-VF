@@ -79,7 +79,7 @@ def get_openai_proposal(text, model="text-davinci-002"):
 
 def scrape_google(query):
     api_key = '8e87e954-6b75-4888-bd6c-86868540beeb'
-    url = f'https://api.spaceserp.com/google/search?apiKey={api_key}&q={query}&domain=google.fr&gl=fr&hl=fr&resultFormat=json&resultBlocks=organic_results%2Canswer_box%2Cpeople_also_ask%2Crelated_searches%2Cads_results'
+    url = f'https://api.spaceserp.com/google/search?apiKey= {api_key}&q={query}&domain=google.fr&gl=fr&hl=fr&resultFormat=json&resultBlocks=organic_results%2Canswer_box%2Cpeople_also_ask%2Crelated_searches%2Cads_results'
     response = requests.get(url).json()
     results = []
 
@@ -107,35 +107,31 @@ def scrape_google(query):
         all_questions = ''
 
     if not results:
-        return pd.DataFrame(columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities', 'OpenAI Plan Proposal', 'OpenAI Meta Description Proposal', 'OpenAI Title Proposal']), pd.DataFrame(columns=['Keyword', 'Volume', 'Title', 'Plan', 'Meta Description', 'Balise Titre', 'People Also Ask', 'Semantic Field', 'Named Entities'])
+        return pd.DataFrame(columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities', 'OpenAI Plan Proposal', 'OpenAI Meta Description Proposal', 'OpenAI Title Proposal'])
 
-    google_df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities', 'OpenAI Plan Proposal', 'OpenAI Meta Description Proposal', 'OpenAI Title Proposal'])
+    df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities', 'OpenAI Plan Proposal', 'OpenAI Meta Description Proposal', 'OpenAI Title Proposal'])
+    
+    summary_row = create_summary_row(df)
+    df = df.append(summary_row, ignore_index=True)
 
-    openai_df = pd.DataFrame({
-        'Keyword': [q] * len(results),
-        'Volume': [''] * len(results),
-        'Title': google_df['Title'],
-        'Plan': google_df['OpenAI Plan Proposal'],
-        'Meta Description': google_df['OpenAI Meta Description Proposal'],
-        'Balise Titre': google_df['OpenAI Title Proposal'],
-        'People Also Ask': [''] * len(results),
-        'Semantic Field': google_df['Semantic Field'],
-        'Named Entities': google_df['Named Entities']
-    })
+    openai_df = df[['Title', 'OpenAI Plan Proposal', 'Word Count', 'Semantic Field', 'Named Entities']]
+    openai_df = openai_df.rename(columns={'OpenAI Plan Proposal': 'Plan', 'Semantic Field': 'Champs sémantique'})
+    openai_df['Volume'] = ''
+    openai_df['Titre'] = ''
+    openai_df['Meta Description'] = ''
+    openai_df['Balise Titre'] = ''
+    openai_df['People Also Ask'] = ''
 
-    summary_row = generate_summary_row(google_df, results)
-    google_df = google_df.append(summary_row, ignore_index=True)
+    return df, openai_df
 
-    return google_df, openai_df
-
-def generate_summary_row(df, results):
-    all_titles = [result[0] for result in results]
-    all_headings = [result[2] for result in results]
-    all_word_counts = [result[3] for result in results]
-    all_serp_descriptions = [result[5] for result in results]
-    all_meta_descriptions = [result[6] for result in results]
-    all_semantic_fields = [result[7] for result in results]
-    all_named_entities = [result[8] for result in results]
+def create_summary_row(df):
+    all_titles = df['Title'].tolist()
+    all_headings = df['Headings'].tolist()
+    all_word_counts = df['Word Count'].tolist()
+    all_serp_descriptions = df['SERP Description'].tolist()
+    all_meta_descriptions = df['Site Meta Description'].tolist()
+    all_semantic_fields = df['Semantic Field'].tolist()
+    all_named_entities = df['Named Entities'].tolist()
 
     summary_row = pd.Series({
         'Title': ' '.join(all_titles[:10]),
