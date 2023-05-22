@@ -64,7 +64,7 @@ def scrape_article(url):
         print(f"An error occurred while trying to scrape the article at {url}. Error: {e}")
         return [], 0, "", "", ""
 
-def get_openai_proposal(text, model="text-davinci-002"):
+def get_openai_proposal(text, title, url, headings, word_count, semantic_field, named_entity, model="text-davinci-002"):
     try:
         response = openai.Completion.create(
             engine=model,
@@ -90,9 +90,9 @@ def scrape_google(query):
             serp_description = result.get('description', '')
             headings, word_count, meta_description, semantic_field, named_entity = scrape_article(url)
 
-            plan_prompt = f"Prompt 1: Write a brief summary based on the provided information.\n\n"
-            meta_description_prompt = f"Prompt 2: Generate a detailed outline for the given text.\n\n"
-            title_prompt = f"Prompt 3: Propose a catchy title for the provided content.\n\n"
+            plan_prompt = f"Plan for the article on {title}:"
+            meta_description_prompt = f"Meta description for the article on {title}:"
+            title_prompt = f"Title for the article on {title}:"
 
             plan_proposal = get_openai_proposal(plan_prompt, title, url, headings, word_count, semantic_field, named_entity)
             meta_description_proposal = get_openai_proposal(meta_description_prompt, title, url, headings, word_count, semantic_field, named_entity)
@@ -110,56 +110,34 @@ def scrape_google(query):
         return pd.DataFrame(columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities', 'OpenAI Plan Proposal', 'OpenAI Meta Description Proposal', 'OpenAI Title Proposal'])
 
     df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities', 'OpenAI Plan Proposal', 'OpenAI Meta Description Proposal', 'OpenAI Title Proposal'])
+    return df
 
-    # Résumé
-    title_summary = ' '.join(df['Title'].values[:10])
-    headings_summary = ' '.join(df['Headings'].values[:10])
+def generate_summary_row(df):
+    all_titles = df['Title'].tolist()
+    all_headings = df['Headings'].tolist()
     word_count_summary = df['Word Count'].median()
-    people_also_ask_summary = all_questions
-    serp_description_summary = ' '.join(df['SERP Description'].values[:10])
-    meta_description_summary = ' '.join(df['Site Meta Description'].values[:10])
-    semantic_field_summary = ' '.join(df['Semantic Field'].values[:10])
-    named_entities_summary = ' '.join(df['Named Entities'].values[:10])
+    all_questions = df['People Also Ask'].tolist()
+    all_serp_descriptions = df['SERP Description'].tolist()
+    all_meta_descriptions = df['Site Meta Description'].tolist()
+    all_semantic_fields = df['Semantic Field'].tolist()
+    all_named_entities = df['Named Entities'].tolist()
 
-    summary_row = pd.Series(
+    summary_row = pd.DataFrame(
         {
-            'Title': title_summary,
-            'URL': '',
-            'Headings': headings_summary,
-            'Word Count': word_count_summary,
-            'People Also Ask': people_also_ask_summary,
-            'SERP Description': serp_description_summary,
-            'Site Meta Description': meta_description_summary,
-            'Semantic Field': semantic_field_summary,
-            'Named Entities': named_entities_summary,
-            'OpenAI Plan Proposal': '',
-            'OpenAI Meta Description Proposal': '',
-            'OpenAI Title Proposal': ''
-        },
-        name='Résumé'
+            'Title': [' '.join(all_titles[:10])],
+            'URL': [''],
+            'Headings': [' '.join(all_headings[:10])],
+            'Word Count': [word_count_summary],
+            'People Also Ask': [' '.join(all_questions)],
+            'SERP Description': [' '.join(all_serp_descriptions[:10])],
+            'Site Meta Description': [' '.join(all_meta_descriptions[:10])],
+            'Semantic Field': [' '.join(all_semantic_fields[:10])],
+            'Named Entities': [' '.join(all_named_entities[:10])]
+        }
     )
-
-    df = df.append(summary_row)
-
-    # Dataframe OpenAI
-    openai_df = pd.DataFrame(columns=['Keyword', 'Plan Proposal', 'Word Count', 'Semantic Field'])
-    for index, row in df.iterrows():
-        keyword = row['Title']
-        plan_proposal = row['OpenAI Plan Proposal']
-        word_count = word_count_summary
-        semantic_field = semantic_field_summary
-
-        openai_df = openai_df.append(
-            {
-                'Keyword': keyword,
-                'Plan Proposal': plan_proposal,
-                'Word Count': word_count,
-                'Semantic Field': semantic_field
-            },
-            ignore_index=True
-        )
-
-    return df, openai_df
+    summary_row = summary_row.rename(index={0: 'Résumé'})
+    summary_row['Semantic Field'] = summary_row['Semantic Field'].str.replace(' ', '  ')
+    return summary_row
 
 st.title("Google Scraper and Article Analyzer")
 query = st.text_input("Enter search queries (separated by commas):")
@@ -167,13 +145,13 @@ query = st.text_input("Enter search queries (separated by commas):")
 if st.button("Scrape Google"):
     queries = [q.strip() for q in query.split(',')]
     for q in queries:
-        df, openai_df = scrape_google(q)
+        df = scrape_google(q)
+        summary_row = generate_summary_row(df)
 
         st.write(f"Results for {q}:")
         st.write(df)
-
-        st.write("OpenAI Data:")
-        st.write(openai_df)
+        st.write("Summary:")
+        st.write(summary_row)
 
         csv = df.to_csv(index=False)
         st.download_button(label="Download CSV", data=csv, file_name="scraping_results.csv", mime="text/csv")
