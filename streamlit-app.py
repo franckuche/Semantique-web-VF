@@ -45,23 +45,15 @@ def scrape_google(query):
     }
     # Reste du code de la fonction...
 
-    # Vérifier que results n'est pas vide
-    if results:
-        google_df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
+    if not results:
+        results.append(['', '', '', '', '', '', '', '', ''])  # Ajouter une ligne vide avec des valeurs par défaut
 
-        # Créer un nouvel enregistrement avec les valeurs de résumé et l'ajouter au dataframe
-        new_row = pd.Series(generate_summary_row(results), name='Résumé')
-        google_df = google_df.append(new_row)
+    google_df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
 
-    else:
-        # Initialiser un DataFrame vide avec les colonnes nécessaires si results est vide
-        google_df = pd.DataFrame(columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
+    new_row = pd.Series(generate_summary_row(results), name='Résumé')
+    google_df = google_df.append(new_row)
 
     return google_df
-
-
-
-
 
 def generate_summary_row(results):
     titles = ' '.join([result[0] for result in results])
