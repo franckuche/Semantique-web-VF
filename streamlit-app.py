@@ -6,30 +6,62 @@ import spacy
 from nltk.probability import FreqDist
 import openai
 
-# Configuration de l'API OpenAI
-openai.api_key = ""
-
-# Demande des clés API OpenAI dans la sidebar
-st.sidebar.title("OpenAI API Key")
-openai_api_key = st.sidebar.text_input("Enter OpenAI API Key:")
-
-# Vérification de la clé API OpenAI
-if not openai_api_key.strip():
-    st.error("Please enter an OpenAI API Key.")
-else:
-    openai.api_key = openai_api_key
-
 nlp = spacy.load('fr_core_news_sm')
 
-# Fonctions d'analyse_text, filter_named_entities, get_named_entities, scrape_article...
+def analyze_text(text):
+    doc = nlp(text)
+    tokens = [token.lemma_.lower() for token in doc if token.is_alpha and not token.is_stop]
+    fdist = FreqDist(tokens)
+    results_str = ' '.join([word for word, freq in fdist.most_common(20)])
+    return results_str
+
+def filter_named_entities(entities):
+    filtered_entities = []
+    for entity in entities:
+        if entity[0].isupper() or entity.lower() in ['société', 'entreprise', 'marque']:
+            filtered_entities.append(entity)
+    return filtered_entities
+
+def get_named_entities(text):
+    doc = nlp(text)
+    named_entities = [ent.text for ent in doc.ents if ent.label_ in ['PROPN', 'PERSON', 'ORG']]
+    filtered_entities = filter_named_entities(named_entities)
+    return ' '.join(filtered_entities)
+
+def scrape_article(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Extract headings with their respective tags
+        headings = [f"{tag.name}: {tag.text}" for tag in soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5'])]
+
+        # Extract meta description
+        meta_description_tag = soup.find('meta', attrs={'name':'description'})
+        meta_description = meta_description_tag['content'] if meta_description_tag else ""
+
+        # Extract main body content
+        body_content = soup.find('body').text
+
+        # Count words in the main body content
+        word_count = len(body_content.split())
+
+        # Analyze semantic field and named entities
+        semantic_field = analyze_text(body_content)
+        named_entity = get_named_entities(' '.join(headings))
+
+        return headings, word_count, meta_description, semantic_field, named_entity
+
+    except Exception as e:
+        print(f"An error occurred while trying to scrape the article at {url}. Error: {e}")
+        return [], 0, "", "", ""
 
 def generate_openai_proposals(keyword, prompt_text):
     messages = [
         {"role": "system", "content": prompt_text},
     ]
-
     message = "User: "
-
     if message:
         messages.append(
             {"role": "user", "content": message},
@@ -38,8 +70,7 @@ def generate_openai_proposals(keyword, prompt_text):
             model="gpt-4", messages=messages
         )
         reply = chat.choices[0].message.content
-
-        return reply
+    return reply
 
 def scrape_google(query):
     api_key = '8e87e954-6b75-4888-bd6c-86868540beeb'
@@ -53,6 +84,9 @@ def scrape_google(query):
     named_entities = []
     serp_descriptions = []
     meta_descriptions = []
+    openai_proposals = []
+    openai_titles = []
+    openai_meta_descriptions = []
     if 'organic_results' in response:
         for result in response['organic_results']:
             title = result.get('title', '')
@@ -67,13 +101,30 @@ def scrape_google(query):
             serp_descriptions.append(serp_description)
             meta_descriptions.append(meta_description)
             results.append((title, url, ' '.join(headings), word_count, '', serp_description, meta_description, semantic_field, named_entity))
+
+            # Generate OpenAI proposals
+            keyword = title
+            plan_prompt_text = f"Tu es expert en référencement. Donne-moi un plan sur la forme hn pour le sujet '{keyword}'."
+            titre_prompt_text = f"Tu es expert en référencement. Propose-moi un titre sur la forme hn pour le sujet '{keyword}'."
+            meta_prompt_text = f"Tu es expert en référencement. Propose-moi une meta description sur la forme hn pour le sujet '{keyword}'."
+
+            proposed_plan = generate_openai_proposals(keyword, plan_prompt_text)
+            proposed_title = generate_openai_proposals(keyword, titre_prompt_text)
+            proposed_meta = generate_openai_proposals(keyword, meta_prompt_text)
+
+            openai_proposals.append(proposed_plan)
+            openai_titles.append(proposed_title)
+            openai_meta_descriptions.append(proposed_meta)
+
     if 'people_also_ask' in response:
         people_also_ask = [item['question'] for item in response['people_also_ask']]
         all_questions = ' '.join(people_also_ask)
     else:
         all_questions = ''
+
     if not results:
-        return pd.DataFrame(columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities']), pd.DataFrame(columns=['Keyword', 'Volume', 'Plan Proposé', 'Titre Proposé', 'Meta Proposé', 'Semantic Field'])
+        return pd.DataFrame(columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities']), pd.DataFrame(columns=['Keyword', 'Volume', 'Proposed Plan', 'Proposed Title', 'Proposed Meta', 'Semantic Field'])
+
     df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
     df = df.rename(index={df.index[-1]: 'Résumé'})
     df['Semantic Field'] = df['Semantic Field'].str.replace(' ', '  ')  # Ajout d'espaces entre deux expressions
@@ -87,28 +138,13 @@ def scrape_google(query):
     df.at['Résumé', 'Semantic Field'] = ' '.join(semantic_fields[:10])
     df.at['Résumé', 'Named Entities'] = ' '.join(named_entities[:10])
 
-    openai_df = pd.DataFrame(columns=['Keyword', 'Volume', 'Plan Proposé', 'Titre Proposé', 'Meta Proposé', 'Semantic Field'])
+    openai_df = pd.DataFrame(columns=['Keyword', 'Volume', 'Proposed Plan', 'Proposed Title', 'Proposed Meta', 'Semantic Field'])
     openai_df['Keyword'] = df['Title']
     openai_df['Volume'] = ''
-    openai_df['Plan Proposé'] = ''
-    openai_df['Titre Proposé'] = ''
-    openai_df['Meta Proposé'] = ''
+    openai_df['Proposed Plan'] = openai_proposals
+    openai_df['Proposed Title'] = openai_titles
+    openai_df['Proposed Meta'] = openai_meta_descriptions
     openai_df['Semantic Field'] = df.at['Résumé', 'Semantic Field']
-
-    for i, row in openai_df.iterrows():
-        keyword = row['Keyword']
-        plan_prompt_text = f"Tu es expert en référencement. Donne-moi un plan sur la forme hn pour le sujet '{keyword}'."
-        titre_prompt_text = f"Tu es expert en référencement. Propose-moi un titre sur la forme hn pour le sujet '{keyword}'."
-        meta_prompt_text = f"Tu es expert en référencement. Propose-moi une meta description sur la forme hn pour le sujet '{keyword}'."
-
-        # Call API OpenAI pour obtenir les propositions
-        plan_proposé = generate_openai_proposals(keyword, plan_prompt_text)
-        titre_proposé = generate_openai_proposals(keyword, titre_prompt_text)
-        meta_proposé = generate_openai_proposals(keyword, meta_prompt_text)
-
-        openai_df.at[i, 'Plan Proposé'] = plan_proposé
-        openai_df.at[i, 'Titre Proposé'] = titre_proposé
-        openai_df.at[i, 'Meta Proposé'] = meta_proposé
 
     return df, openai_df
 
@@ -124,7 +160,5 @@ if st.button("Scrape Google"):
         st.write(google_df)
         st.write("OpenAI Results:")
         st.write(openai_df)
-        csv_google = google_df.to_csv(index=False)
-        csv_openai = openai_df.to_csv(index=False)
-        st.download_button(label="Download Google CSV", data=csv_google, file_name="scraping_results_google.csv", mime="text/csv")
-        st.download_button(label="Download OpenAI CSV", data=csv_openai, file_name="scraping_results_openai.csv", mime="text/csv")
+        csv = google_df.to_csv(index=False)
+        st.download_button(label="Download CSV", data=csv, file_name="scraping_results.csv", mime="text/csv")
