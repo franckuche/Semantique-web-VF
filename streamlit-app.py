@@ -13,6 +13,10 @@ openai.api_key = ""
 st.sidebar.title("OpenAI API Key")
 openai_api_key = st.sidebar.text_input("Enter OpenAI API Key:")
 
+# Configuration de l'API OpenAI
+openai.api_key = openai_api_key
+
+
 # Vérification de la clé API OpenAI
 if not openai_api_key.strip():
     st.error("Please enter an OpenAI API Key.")
