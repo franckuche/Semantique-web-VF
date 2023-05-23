@@ -139,11 +139,10 @@ def scrape_google(query):
     df.at['Résumé', 'Semantic Field'] = ' '.join(semantic_fields[:10])
     df.at['Résumé', 'Named Entities'] = ' '.join(named_entities[:10])
 
-    # Generate OpenAI proposals
     openai_df = pd.DataFrame(columns=['Keyword', 'Volume', 'Semantic Field'])
-    openai_df['Keyword'] = df['Title']
+    openai_df.loc[0, 'Keyword'] = query
     openai_df['Volume'] = ''
-    openai_df['Semantic Field'] = df.at['Résumé', 'Semantic Field']
+    openai_df.loc[0, 'Semantic Field'] = df.at['Résumé', 'Semantic Field']
 
     return df, openai_df
 
@@ -152,12 +151,19 @@ query = st.text_input("Enter search queries (separated by commas):")
 
 if st.button("Scrape Google"):
     queries = [q.strip() for q in query.split(',')]
-    for q in queries:
-        google_df, openai_df = scrape_google(q)
-        st.write(f"Results for {q}:")
-        st.write("Google Results:")
-        st.write(google_df)
-        st.write("OpenAI Results:")
-        st.write(openai_df)
-        csv = google_df.to_csv(index=False)
-        st.download_button(label="Download CSV", data=csv, file_name="scraping_results.csv", mime="text/csv")
+    google_df = pd.DataFrame()
+    openai_df = pd.DataFrame(columns=['Keyword', 'Volume', 'Semantic Field'])
+    for i, q in enumerate(queries):
+        google_res, openai_res = scrape_google(q)
+        google_df = pd.concat([google_df, google_res])
+        if i == 0:
+            openai_df = openai_res
+        else:
+            openai_df = pd.concat([openai_df, openai_res], ignore_index=True)
+
+    st.write("Google Results:")
+    st.write(google_df)
+    st.write("OpenAI Results:")
+    st.write(openai_df)
+    csv = google_df.to_csv(index=False)
+    st.download_button(label="Download CSV", data=csv, file_name="scraping_results.csv", mime="text/csv")
