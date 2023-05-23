@@ -147,7 +147,7 @@ def scrape_google(query):
     openai_df = pd.DataFrame(columns=['Keyword', 'Volume', 'Plan proposé', 'Semantic Field'])
     openai_df['Keyword'] = df['Title']
     openai_df['Volume'] = ''
-    openai_df['Plan proposé'] = [generate_openai_proposal(keyword, df.at['Résumé', 'Semantic Field'], df.at['Résumé', 'Headings'])]
+    openai_df['Plan proposé'] = [generate_openai_proposals(keyword, df.at['Résumé', 'Semantic Field'], df.at['Résumé', 'Headings'])]
     openai_df['Semantic Field'] = df.at['Résumé', 'Semantic Field']
 
     return df, openai_df
