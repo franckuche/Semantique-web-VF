@@ -14,6 +14,10 @@ st.sidebar.title("OpenAI API Key")
 openai_api_key = st.sidebar.text_input("Enter OpenAI API Key:")
 
 # Configuration de l'API OpenAI
+openai.api_key = openai_api_key
+
+
+# Vérification de la clé API OpenAI
 if not openai_api_key.strip():
     st.error("Please enter an OpenAI API Key.")
 else:
@@ -70,27 +74,22 @@ def scrape_article(url):
         print(f"An error occurred while trying to scrape the article at {url}. Error: {e}")
         return [], 0, "", "", ""
 
-def generate_openai_proposal(keyword, semantic_field, headings):
-    prompt_text = f"Tu es expert en référencement. Réponds à la demande suivante :\n\n" \
-                  f"Keyword: {keyword}\n" \
-                  f"Sémantique du résumé: {semantic_field}\n" \
-                  f"Headings du résumé: {headings}\n\n" \
-                  f"Plan proposé :"
-
+def generate_openai_proposals(keyword, semantic_field, headings):
+    prompt_text = f"User: Tu es expert en référencement. Propose-moi un plan sur la forme hn pour le sujet '{keyword}'."
     messages = [
         {"role": "system", "content": prompt_text},
     ]
-    user_message = "User: "
 
-    if user_message:
+    message = "User: "
+
+    if message:
         messages.append(
-            {"role": "user", "content": user_message},
+            {"role": "user", "content": message},
         )
-    chat = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=messages
-    )
-    reply = chat.choices[0].message.content.strip()
+        chat = openai.ChatCompletion.create(
+            model="gpt-4", messages=messages
+        )
+        reply = chat.choices[0].message.content
 
     return reply
 
@@ -122,6 +121,10 @@ def scrape_google(query):
             meta_descriptions.append(meta_description)
             results.append((title, url, ' '.join(headings), word_count, '', serp_description, meta_description, semantic_field, named_entity))
 
+            # Generate OpenAI proposals
+            openai_proposal = generate_openai_proposals(title, df.at['Résumé', 'Semantic Field'], df.at['Résumé', 'Headings'])
+            openai_proposals.append(openai_proposal)
+
     if 'people_also_ask' in response:
         people_also_ask = [item['question'] for item in response['people_also_ask']]
         all_questions = ' '.join(people_also_ask)
@@ -129,7 +132,7 @@ def scrape_google(query):
         all_questions = ''
 
     if not results:
-        return pd.DataFrame(columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities']), pd.DataFrame(columns=['Keyword', 'Volume', 'Plan proposé', 'Semantic Field'])
+        return pd.DataFrame(columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities']), pd.DataFrame(columns=['Keyword', 'Volume', 'Plan proposé'])
 
     df = pd.DataFrame(results, columns=['Title', 'URL', 'Headings', 'Word Count', 'People Also Ask', 'SERP Description', 'Site Meta Description', 'Semantic Field', 'Named Entities'])
     df = df.rename(index={df.index[-1]: 'Résumé'})
@@ -144,11 +147,10 @@ def scrape_google(query):
     df.at['Résumé', 'Semantic Field'] = ' '.join(semantic_fields[:10])
     df.at['Résumé', 'Named Entities'] = ' '.join(named_entities[:10])
 
-    openai_df = pd.DataFrame(columns=['Keyword', 'Volume', 'Plan proposé', 'Semantic Field'])
+    openai_df = pd.DataFrame(columns=['Keyword', 'Volume', 'Plan proposé'])
     openai_df['Keyword'] = df['Title']
     openai_df['Volume'] = ''
-    openai_df['Plan proposé'] = [generate_openai_proposals(keyword, df.at['Résumé', 'Semantic Field'], df.at['Résumé', 'Headings'])]
-    openai_df['Semantic Field'] = df.at['Résumé', 'Semantic Field']
+    openai_df['Plan proposé'] = openai_proposals
 
     return df, openai_df
 
