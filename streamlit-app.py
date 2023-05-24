@@ -155,16 +155,16 @@ def scrape_google(query):
     return df, openai_df
 
 st.title("Google Scraper and Article Analyzer")
-query = st.text_input("Enter search queries (separated by commas):")
+query = st.text_input("Entrez vos requêtes de recherche (séparées par des virgules) :")
 
 if st.button("Scrape Google"):
     queries = [q.strip() for q in query.split(',')]
     for q in queries:
         google_df, openai_df = scrape_google(q)
-        st.write(f"Results for {q}:")
-        st.write("Google Results:")
-        st.write(google_df)
-        st.write("OpenAI Results:")
-        st.write(openai_df)
+        st.write(f"Résultats pour {q} :")
+        st.write("Résultats Google :")
+        st.dataframe(google_df)
+        st.write("Résultats OpenAI :")
+        st.dataframe(openai_df)
         csv = google_df.to_csv(index=False)
-        st.download_button(label="Download CSV", data=csv, file_name="scraping_results.csv", mime="text/csv")
+        st.download_button(label="Télécharger le CSV", data=csv, file_name="scraping_results.csv", mime="text/csv")
