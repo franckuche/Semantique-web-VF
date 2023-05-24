@@ -89,16 +89,16 @@ def scrape_google(query):
     response.raise_for_status()
     data = response.json()
 
-    # Vérifier si la clé 'organicResults' est dans le dictionnaire
-    if 'organicResults' not in data:
-        st.error("La clé 'organicResults' n'a pas été trouvée dans la réponse de l'API.")
+    # Vérifier si la clé 'organic_results' est dans le dictionnaire
+    if 'organic_results' not in data:
+        st.error("La clé 'organic_results' n'a pas été trouvée dans la réponse de l'API.")
         return pd.DataFrame(), pd.DataFrame()
 
     results = []
-    for item in data['organicResults']:
-        if 'title' in item and 'url' in item:
+    for item in data['organic_results']:
+        if 'title' in item and 'link' in item:
             title = item['title']
-            url = item['url']
+            url = item['link']
             headings, word_count, meta_description, semantic_field, named_entity = scrape_article(url)
             result = [title, url, headings, word_count, item.get('peopleAlsoAsk', ""), item.get('snippet', ""), meta_description, semantic_field, named_entity]
             results.append(result)
