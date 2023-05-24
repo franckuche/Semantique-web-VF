@@ -88,8 +88,13 @@ def scrape_google(query):
     response = requests.get(url)
     response.raise_for_status()
     data = response.json()
-    results = []
 
+    # Vérifier si la clé 'organicResults' est dans le dictionnaire
+    if 'organicResults' not in data:
+        st.error("La clé 'organicResults' n'a pas été trouvée dans la réponse de l'API.")
+        return pd.DataFrame(), pd.DataFrame()
+
+    results = []
     for item in data['organicResults']:
         if 'title' in item and 'url' in item:
             title = item['title']
@@ -102,7 +107,7 @@ def scrape_google(query):
 
     openai_proposals = []
     for title in df['Title']:
-        openai_proposal = generate_openai_proposals(title, df.at['Résumé', 'Semantic Field'], df.at['Résumé', 'Headings'])
+        openai_proposal = generate_openai_proposals(title, df.at[0, 'Semantic Field'], df.at[0, 'Headings'])
         openai_proposals.append(openai_proposal)
 
     return df, pd.DataFrame(openai_proposals, columns=['OpenAI Proposal'])
